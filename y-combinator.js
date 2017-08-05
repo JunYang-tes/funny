@@ -28,6 +28,9 @@
 })()
 
 ; (() => {
+    /**
+     * High order function version
+     */
     let Y = F => {
         let f = (self) => (...args) => F((...arg) => self(self)(...arg))(...args)
         return f(f)
