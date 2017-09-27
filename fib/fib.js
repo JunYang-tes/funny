@@ -62,6 +62,40 @@ function loopFibGen(add, number) {
 }
 const bigNumberLoopFib = loopFibGen((a, b) => a.add(b), a => new Big(a))
 
+function TtransFibGen(num, add, mul) {
+  function TtransFib(n, a, b, p, q) {
+    if (n === 0) {
+      return b
+    } else if (n % 2 === 0) {
+      return TtransFib(n / 2,
+        a, b,
+        add(
+          mul(p, p),
+          mul(q, q)),
+        add(
+          mul(mul(num(2), p), q),
+          mul(q, q)
+        )
+      )
+    } else {
+      return TtransFib(
+        n - 1,
+        add(
+          add(mul(b, q), mul(a, q)),
+          mul(a, p)
+        ),
+        add(mul(b, p), mul(a, q)),
+        p, q
+      )
+    }
+  }
+  return function TranFib(n) {
+    return TtransFib(n, num(1), num(0), num(0), num(1))
+  }
+}
+
+const bigNumberTransFib = TtransFibGen(a => new Big(a), (a, b) => a.add(b), (a, b) => a.mul(b))
+
 
 function compare(ns, ...fibs) {
   for (let n of ns) {
@@ -76,7 +110,7 @@ function outputGnuPlotData(fib) {
   console.log(`#n time ${fib.name} `)
   let from = 100
   let to = 10000
-  step = 100
+  let step = 100
   let x = []
   let y = []
   for (let i = from; i < to; i += step) {
@@ -85,11 +119,26 @@ function outputGnuPlotData(fib) {
   }
 }
 
+const bnMethods = {
+  add: (n) => {
+    while (n--) {
+      new Big(n).add(new Big(n))
+    }
+  },
+  mul: (n) => {
+    while (n--) {
+      new Big(n).mul(new Big(n))
+    }
+  }
+}
+
+
 const fibs = {
   "num-loop": loopFibGen((a, b) => a + b, a => a),
   "big-num-loop": bigNumberLoopFib,
   "num-matrix": numberMatFib,
-  "big-num-matrix": bigNumberMatFib
+  "big-num-matrix": bigNumberMatFib,
+  "big-num-trans": bigNumberTransFib
 }
 
 const program = require("cli-argparser").program
@@ -112,7 +161,14 @@ program({
     type: {
       type: "item",
       required: true,
-      range: ["num-loop", "num-matrix", "big-num-loop", "big-num-matrix"]
+      range: Object.keys(fibs)
+    }
+  },
+  "bnjs-test": {
+    type: {
+      type: "item",
+      required: true,
+      range: ["add", "mul"]
     }
   }
 }, {
@@ -122,9 +178,12 @@ program({
       for (let i = from; i < to; i += step) {
         arry.push(i)
       }
-      compare(arry, bigNumberMatFib, bigNumberLoopFib)
+      compare(arry, bigNumberMatFib, bigNumberLoopFib, bigNumberTransFib)
     },
     "gnu-plot-data"({ type }) {
       outputGnuPlotData(fibs[type])
+    },
+    "bnjs-test"({ type }) {
+      outputGnuPlotData(bnMethods[type])
     }
   })
